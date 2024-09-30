@@ -35,7 +35,8 @@ def index():
     if 'user_id' in session:
         return redirect(url_for('user_balance'))
     
-    return render_template_string('''<!DOCTYPE html>
+    return render_template_string('''
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
@@ -64,7 +65,8 @@ def index():
         <p>Não tem uma conta? <a href="/register">Cadastre-se</a></p>
     </div>
 </body>
-</html>''')
+</html>
+    ''')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -87,9 +89,10 @@ def register():
 
         hashed_password = hash_password(password)
 
-        cur.execute('''INSERT INTO users (username, password_hash, full_name, age, phone, balance)
-                       VALUES (%s, %s, %s, %s, %s, %s)''', 
-                   (username, hashed_password, full_name, age, phone, 0.00))
+        cur.execute('''
+            INSERT INTO users (username, password_hash, full_name, age, phone, balance)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        ''', (username, hashed_password, full_name, age, phone, 0.00))
 
         conn.commit()
         cur.close()
@@ -97,7 +100,8 @@ def register():
 
         return redirect(url_for('index'))
 
-    return render_template_string('''<!DOCTYPE html>
+    return render_template_string('''
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
@@ -131,7 +135,8 @@ def register():
         </form>
     </div>
 </body>
-</html>''')
+</html>
+    ''')
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -167,6 +172,7 @@ def user_balance():
         if 'withdraw' in request.form:
             withdrawal_amount = float(request.form['withdrawal_amount'])
             if withdrawal_amount <= user_data['balance']:
+                # Deduzir o valor do saldo
                 new_balance = user_data['balance'] - withdrawal_amount
                 conn = get_db_connection()
                 cur = conn.cursor()
@@ -201,42 +207,63 @@ def user_balance():
                 return 'Saldo insuficiente para saque', 400
 
     if user_data:
-        return render_template_string('''<!DOCTYPE html>
+        return render_template_string('''
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saldo do Usuário</title>
+    <title>Seu Saldo</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); width: 300px; }
+        h1 { text-align: center; margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; }
+        input { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        button { width: 100%; padding: 10px; background-color: #007bff; border: none; color: white; font-size: 16px; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+    </style>
 </head>
 <body>
-    <h1>Bem-vindo, {{ user_data['full_name'] }}</h1>
-    <p>Seu saldo: R$ {{ user_data['balance'] }}</p>
-    <form method="post">
-        <label for="withdrawal_amount">Valor para saque:</label>
-        <input type="number" id="withdrawal_amount" name="withdrawal_amount" required>
-        <button type="submit" name="withdraw">Sacar</button>
-    </form>
-    <a href="/logout">Sair</a>
+    <div class="container">
+        <h1>Seu Saldo</h1>
+        <p><strong>Nome:</strong> {{ user_data['full_name'] }}</p>
+        <p><strong>Idade:</strong> {{ user_data['age'] }}</p>
+        <p><strong>Telefone:</strong> {{ user_data['phone'] }}</p>
+        <p><strong>Saldo:</strong> R$ {{ user_data['balance'] }}</p>
+        <form method="post" action="/payment">
+            <button type="submit">Realizar Pagamento</button>
+        </form>
+        <form method="post" action="/withdraw">
+            <label for="withdrawal_amount">Valor para saque:</label>
+            <input type="number" id="withdrawal_amount" name="withdrawal_amount" step="0.01" min="0" required>
+            <button type="submit" name="withdraw">Sacar</button>
+        </form>
+        <form method="post" action="/logout">
+            <button type="submit">Sair</button>
+        </form>
+    </div>
 </body>
-</html>''')
+</html>
+        ''', user_data=user_data)
 
-@app.route('/withdraw/success')
-def withdraw_success():
-    return "Saque realizado com sucesso!"
+    return 'Dados do usuário não encontrados', 404
 
-@app.route('/withdraw/failure')
-def withdraw_failure():
-    return "O saque falhou. Tente novamente."
-
-@app.route('/withdraw/pending')
-def withdraw_pending():
-    return "O saque está pendente. Verifique seu status."
-
-@app.route('/logout')
+@app.route('/logout', methods=['POST'])
 def logout():
     session.pop('user_id', None)
     return redirect(url_for('index'))
 
+@app.route('/payment/callback', methods=['POST'])
+def payment_callback():
+    data = request.json
+    payment_id = data.get('id')
+    # Continue com o processamento de callback aqui
+    return '', 200
+
+# Adicione mais rotas e lógica conforme necessário
+
 if __name__ == '__main__':
-    app.run(port=500)
+    app.run(debug=True)
+
 
