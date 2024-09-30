@@ -89,7 +89,8 @@ def register():
         hashed_password = hash_password(password)
 
         cur.execute('''INSERT INTO users (username, password_hash, full_name, age, phone, balance)
-                        VALUES (%s, %s, %s, %s, %s, %s)''', (username, hashed_password, full_name, age, phone, 0.00))
+                       VALUES (%s, %s, %s, %s, %s, %s)''', 
+                   (username, hashed_password, full_name, age, phone, 0.00))
 
         conn.commit()
         cur.close()
@@ -204,7 +205,11 @@ def user_balance():
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=deviceAqui está o código modificado para que o aplicativo Flask seja executado na porta 500:
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saldo do Usuário</title>
+</head>
+<body>
+Aqui está o código corrigido para o aplicativo Flask, com as devidas mudanças para garantir que ele funcione corretamente e utilize a porta 500:
 
 ```python
 from flask import Flask, request, render_template_string, redirect, url_for, session
@@ -244,7 +249,36 @@ def index():
     if 'user_id' in session:
         return redirect(url_for('user_balance'))
     
-    return render_template_string('''...''')  # Mantém o mesmo conteúdo
+    return render_template_string('''<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login ou Cadastro</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); width: 300px; }
+        h1 { text-align: center; margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; }
+        input { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        button { width: 100%; padding: 10px; background-color: #007bff; border: none; color: white; font-size: 16px; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Login</h1>
+        <form method="post" action="/login">
+            <label for="username">Usuário:</label>
+            <input type="text" id="username" name="username" required>
+            <label for="password">Senha:</label>
+            <input type="password" id="password" name="password" required>
+            <button type="submit">Entrar</button>
+        </form>
+        <p>Não tem uma conta? <a href="/register">Cadastre-se</a></p>
+    </div>
+</body>
+</html>''')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -267,8 +301,8 @@ def register():
 
         hashed_password = hash_password(password)
 
-        cur.execute('''INSERT INTO users (username, password_hash, full_name, age, phone, balance) VALUES (%s, %s, %s, %s, %s, %s)''', 
-                    (username, hashed_password, full_name, age, phone, 0.00))
+        cur.execute('''INSERT INTO users (username, password_hash, full_name, age, phone, balance)
+                       VALUES (%s, %s, %s, %s, %s, %s)''', (username, hashed_password, full_name, age, phone, 0.00))
 
         conn.commit()
         cur.close()
@@ -276,7 +310,41 @@ def register():
 
         return redirect(url_for('index'))
 
-    return render_template_string('''...''')  # Mantém o mesmo conteúdo
+    return render_template_string('''<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); width: 300px; }
+        h1 { text-align: center; margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; }
+        input { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        button { width: 100%; padding: 10px; background-color: #007bff; border: none; color: white; font-size: 16px; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Cadastro</h1>
+        <form method="post" action="/register">
+            <label for="full_name">Nome completo:</label>
+            <input type="text" id="full_name" name="full_name" required>
+            <label for="age">Idade:</label>
+            <input type="number" id="age" name="age" required>
+            <label for="phone">Telefone:</label>
+            <input type="text" id="phone" name="phone" required>
+            <label for="username">Usuário:</label>
+            <input type="text" id="username" name="username" required>
+            <label for="password">Senha:</label>
+            <input type="password" id="password" name="password" required>
+            <button type="submit">Cadastrar</button>
+        </form>
+    </div>
+</body>
+</html>''')
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -346,42 +414,45 @@ def user_balance():
                 return 'Saldo insuficiente para saque', 400
 
     if user_data:
-        return render_template_string('''...''', user_data=user_data)  # Mantém o mesmo conteúdo
+        return render_template_string('''<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   Aqui está o restante do código, onde você irá processar o sucesso, falha ou pendência do pagamento:
 
-    return 'Dados do usuário não encontrados', 404
+```python
+    <title>Saldo do Usuário</title>
+</head>
+<body>
+    <h1>Bem-vindo, {{ user_data['full_name'] }}</h1>
+    <p>Seu saldo: R$ {{ user_data['balance'] }}</p>
+    <form method="post">
+        <label for="withdrawal_amount">Valor para saque:</label>
+        <input type="number" id="withdrawal_amount" name="withdrawal_amount" required>
+        <button type="submit" name="withdraw">Sacar</button>
+    </form>
+    <a href="/logout">Sair</a>
+</body>
+</html>''')
 
-@app.route('/logout', methods=['POST'])
+@app.route('/withdraw/success')
+def withdraw_success():
+    return "Saque realizado com sucesso!"
+
+@app.route('/withdraw/failure')
+def withdraw_failure():
+    return "O saque falhou. Tente novamente."
+
+@app.route('/withdraw/pending')
+def withdraw_pending():
+    return "O saque está pendente. Verifique seu status."
+
+@app.route('/logout')
 def logout():
     session.pop('user_id', None)
     return redirect(url_for('index'))
 
-@app.route('/payment/callback', methods=['POST'])
-def payment_callback():
-    data = request.json
-    payment_id = data.get('id')
-    status = data.get('status')
-
-    # Processar o status do pagamento
-    if status == 'approved':
-        # Atualizar o saldo do usuário, registrar a transação, etc.
-        pass
-    elif status == 'rejected':
-        # Lidar com pagamentos rejeitados
-        pass
-
-    return '', 200
-
-@app.route('/withdraw/success')
-def withdraw_success():
-    return 'Saque realizado com sucesso!'
-
-@app.route('/withdraw/failure')
-def withdraw_failure():
-    return 'Falha ao realizar saque.'
-
-@app.route('/withdraw/pending')
-def withdraw_pending():
-    return 'Saque pendente. Verifique o status posteriormente.'
-
 if __name__ == '__main__':
-    app.run(debug=True, port=500)  # Mudança para executar na porta 500
+    app.run(port=500)
+
