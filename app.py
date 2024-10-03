@@ -13,20 +13,25 @@ MERCADO_PAGO_ACCESS_TOKEN = "APP_USR-2957403152017240-091400-a4ac3b9b1025c4dce04
 # Configuração da API do Mercado Pago
 sdk = mercadopago.SDK(MERCADO_PAGO_ACCESS_TOKEN)
 
-# Configurações do banco de dados MySQL
+# Configurações do banco de dados MySQL (usando ClearDB no Heroku)
 DATABASE_CONFIG = {
-    'user': 'root',
-    'password': 'braga152',
-    'host': 'localhost',
-    'database': 'meu_banco',
+    'user': 'bf4f36ce29443b',
+    'password': '6b0486f7',
+    'host': 'us-cluster-east-01.k8s.cleardb.net',
+    'database': 'heroku_c37d1ea8733062b',
+    'raise_on_warnings': True,
+    'reconnect': True,
 }
 
+# Função para obter conexão com o banco de dados
 def get_db_connection():
     return mysql.connector.connect(**DATABASE_CONFIG)
 
+# Função para hashear a senha
 def hash_password(password):
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
+# Função para verificar se a senha corresponde ao hash
 def check_password(stored_hash, password):
     return bcrypt.checkpw(password.encode(), stored_hash.encode())
 
@@ -172,7 +177,6 @@ def user_balance():
         if 'withdraw' in request.form:
             withdrawal_amount = float(request.form['withdrawal_amount'])
             if withdrawal_amount <= user_data['balance']:
-                # Deduzir o valor do saldo
                 new_balance = user_data['balance'] - withdrawal_amount
                 conn = get_db_connection()
                 cur = conn.cursor()
@@ -181,7 +185,6 @@ def user_balance():
                 cur.close()
                 conn.close()
 
-                # Processar o pagamento via Pix
                 preference_data = {
                     'items': [{
                         'title': 'Saque via Pix',
@@ -202,18 +205,18 @@ def user_balance():
 
                 preference_response = sdk.preference().create(preference_data)
                 preference_id = preference_response['response']['id']
-                return redirect(preference_response['response']['init_point'])
-            else:
-                return 'Saldo insuficiente para saque', 400
 
-    if user_data:
-        return render_template_string('''
+                return redirect(preference_response['response']['init_point'])
+
+        return 'Erro na transação', 400
+
+    return render_template_string('''
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Seu Saldo</title>
+    <title>Saldo do Usuário</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; }
         .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); width: 300px; }
@@ -226,45 +229,34 @@ def user_balance():
 </head>
 <body>
     <div class="container">
-        <h1>Seu Saldo</h1>
-        <p><strong>Nome:</strong> {{ user_data['full_name'] }}</p>
-        <p><strong>Idade:</strong> {{ user_data['age'] }}</p>
-        <p><strong>Telefone:</strong> {{ user_data['phone'] }}</p>
-        <p><strong>Saldo:</strong> R$ {{ user_data['balance'] }}</p>
-        <form method="post" action="/payment">
-            <button type="submit">Realizar Pagamento</button>
-        </form>
-        <form method="post" action="/withdraw">
-            <label for="withdrawal_amount">Valor para saque:</label>
-            <input type="number" id="withdrawal_amount" name="withdrawal_amount" step="0.01" min="0" required>
+        <h1>Saldo</h1>
+        <p>Nome: {{ user_data['full_name'] }}</p>
+        <p>Idade: {{ user_data['age'] }}</p>
+        <p>Telefone: {{ user_data['phone'] }}</p>
+        <p>Saldo atual: R$ {{ user_data['balance'] }}</p>
+        <form method="post">
+            <label for="withdrawal_amount">Quantia para saque:</label>
+            <input type="number" step="0.01" name="withdrawal_amount" id="withdrawal_amount" required>
             <button type="submit" name="withdraw">Sacar</button>
-        </form>
-        <form method="post" action="/logout">
-            <button type="submit">Sair</button>
         </form>
     </div>
 </body>
 </html>
-        ''', user_data=user_data)
+    ''', user_data=user_data)
 
-    return 'Dados do usuário não encontrados', 404
+@app.route('/withdraw/success')
+def withdraw_success():
+    return 'Saque efetuado com sucesso!'
 
-@app.route('/logout', methods=['POST'])
-def logout():
-    session.pop('user_id', None)
-    return redirect(url_for('index'))
+@app.route('/withdraw/failure')
+def withdraw_failure():
+    return 'Falha no saque. Tente novamente.'
 
-@app.route('/payment/callback', methods=['POST'])
-def payment_callback():
-    data = request.json
-    payment_id = data.get('id')
-    # Continue com o processamento de callback aqui
-    return '', 200
-
-# Adicione mais rotas e lógica conforme necessário
+@app.route('/withdraw/pending')
+def withdraw_pending():
+    return 'Saque pendente. Aguarde confirmação.'
 
 if __name__ == '__main__':
     app.run(debug=True)
-
 
 
