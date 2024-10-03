@@ -1,3 +1,4 @@
+
 import os
 import mysql.connector
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session
@@ -13,7 +14,19 @@ mp = mercadopago.SDK("SUA_ACCESS_TOKEN_AQUI")
 # Função para conectar ao banco de dados
 def get_db_connection():
     DATABASE_URL = os.environ.get('CLEARDB_DATABASE_URL')
-    return mysql.connector.connect(DATABASE_URL)
+    
+    if not DATABASE_URL:
+        raise ValueError("A variável CLEARDB_DATABASE_URL não está configurada.")
+    
+    # Extrair os componentes da URL do banco de dados
+    db_config = mysql.connector.connect(
+        host=DATABASE_URL.split('@')[1].split('/')[0],
+        user=DATABASE_URL.split('//')[1].split(':')[0],
+        password=DATABASE_URL.split(':')[2].split('@')[0],
+        database=DATABASE_URL.split('/')[1]
+    )
+    
+    return db_config
 
 # Rota para a página inicial
 @app.route('/')
