@@ -16,7 +16,8 @@ sdk = mercadopago.SDK(MERCADO_PAGO_ACCESS_TOKEN)
 
 # Configurações do banco de dados MySQL
 DATABASE_CONFIG = {
-    'user': 'username',          # Substitua por seu nome de usuário
+    'Name':	'Heroku User',
+    'user': 'bf4f36ce29443b',          # Substitua por seu nome de usuário
     'password': 'password',      # Substitua pela sua senha
     'host': 'hostname',          # Substitua pelo nome do host
     'database': 'databasename',  # Substitua pelo nome do banco de dados
