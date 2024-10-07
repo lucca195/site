@@ -16,13 +16,13 @@ sdk = mercadopago.SDK(MERCADO_PAGO_ACCESS_TOKEN)
 
 # Configurações do banco de dados MySQL
 DATABASE_CONFIG = {
-    'Name':	'Usuário do Heroku',
-    'user': 'bf4f36ce29443b',          # Substitua por seu nome de usuário
-    'password': '6b0486f7',      # Substitua pela sua senha
-    'host': 'us-cluster-east-01.k8s.cleardb.net',          # Substitua pelo nome do host
-    'database': 'heroku_c37d1ea8733062b',  # Substitua pelo nome do banco de dados
+    'user': 'bf4f36ce29443b',  # Substitua com seu usuário
+    'password': '6b0486f7',     # Substitua com sua senha
+    'host': 'us-cluster-east-01.k8s.cleardb.net',  # Host do banco ClearDB
+    'database': 'heroku_c37d1ea8733062b',  # Nome do banco de dados
     'raise_on_warnings': True,
 }
+
 
 def get_db_connection():
     return mysql.connector.connect(**DATABASE_CONFIG)
