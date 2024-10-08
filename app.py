@@ -2,6 +2,7 @@ from flask import Flask, request, render_template_string, redirect, url_for, ses
 import mysql.connector
 import bcrypt
 import mercadopago
+import os
 
 app = Flask(__name__)
 app.secret_key = 'sua_chave_secreta_aqui'
@@ -22,7 +23,6 @@ DATABASE_CONFIG = {
     'raise_on_warnings': True,
 }
 
-
 def get_db_connection():
     return mysql.connector.connect(**DATABASE_CONFIG)
 
@@ -36,7 +36,7 @@ def check_password(stored_hash, password):
 def index():
     if 'user_id' in session:
         return redirect(url_for('user_balance'))
-    
+
     return render_template_string('''<!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -76,6 +76,10 @@ def register():
         phone = request.form['phone']
         username = request.form['username']
         password = request.form['password']
+
+        # Valida se todos os campos estão preenchidos
+        if not all([full_name, age, phone, username, password]):
+            return 'Todos os campos são obrigatórios', 400
 
         conn = get_db_connection()
         cur = conn.cursor(dictionary=True)
@@ -195,8 +199,9 @@ def user_balance():
                     }]
                 }
                 preference_response = sdk.preference().create(preference_data)
-                return redirect(preference_response["response"]["init_point"])
-            return 'Saldo insuficiente para o saque.', 400
+                payment_url = preference_response["response"]["init_point"]
+
+                return redirect(payment_url)
 
     return render_template_string('''<!DOCTYPE html>
 <html lang="pt-br">
@@ -206,26 +211,21 @@ def user_balance():
     <title>Saldo do Usuário</title>
 </head>
 <body>
-    <h1>Bem-vindo, {{ full_name }}</h1>
-    <p>Idade: {{ age }}</p>
-    <p>Telefone: {{ phone }}</p>
-    <p>Saldo: R$ {{ balance }}</p>
-
-    <h2>Saque</h2>
+    <h1>Bem-vindo, {{ user_data['full_name'] }}!</h1>
+    <p>Seu saldo: R$ {{ user_data['balance'] }}</p>
     <form method="post" action="/user/balance">
-        <input type="number" name="withdrawal_amount" placeholder="Valor do saque" required>
+        <label for="withdrawal_amount">Valor para saque:</label>
+        <input type="number" step="0.01" id="withdrawal_amount" name="withdrawal_amount" required>
         <button type="submit" name="withdraw">Sacar</button>
     </form>
-    <form method="post" action="/logout">
-        <button type="submit">Sair</button>
-    </form>
+    <a href="/logout">Sair</a>
 </body>
-</html>''', **user_data)
+</html>''', user_data=user_data)
 
-@app.route('/logout', methods=['POST'])
+@app.route('/logout')
 def logout():
     session.pop('user_id', None)
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
