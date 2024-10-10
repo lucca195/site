@@ -95,8 +95,9 @@ def register():
         hashed_password = hash_password(password)
 
         cur.execute('''INSERT INTO users (username, password_hash, email, full_name, age, phone, balance)
-                       VALUES (%s, %s, %s, %s, %s, %s, %s)''',
-                   (username, hashed_password, email, full_name, age, phone, 0.00))
+               VALUES (%s, %s, %s, %s, %s, %s, %s)''', 
+               (username, password_hash, email, full_name, age, phone, balance))
+
 
         conn.commit()
         cur.close()
