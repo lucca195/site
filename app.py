@@ -76,26 +76,27 @@ def register():
         phone = request.form['phone']
         username = request.form['username']
         password = request.form['password']
+        email = request.form['email']  # Adicionando o campo de email
 
         # Valida se todos os campos estão preenchidos
-        if not all([full_name, age, phone, username, password]):
+        if not all([full_name, age, phone, username, password, email]):
             return 'Todos os campos são obrigatórios', 400
 
         conn = get_db_connection()
         cur = conn.cursor(dictionary=True)
-        cur.execute('SELECT * FROM users WHERE username = %s', (username,))
+        cur.execute('SELECT * FROM users WHERE username = %s OR email = %s', (username, email))
         user = cur.fetchone()
 
         if user:
             cur.close()
             conn.close()
-            return 'Usuário já existe', 400
+            return 'Usuário ou email já existe', 400
 
         hashed_password = hash_password(password)
 
-        cur.execute('''INSERT INTO users (username, password_hash, full_name, age, phone, balance)
-                       VALUES (%s, %s, %s, %s, %s, %s)''',
-                   (username, hashed_password, full_name, age, phone, 0.00))
+        cur.execute('''INSERT INTO users (username, password_hash, email, full_name, age, phone, balance)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s)''',
+                   (username, hashed_password, email, full_name, age, phone, 0.00))
 
         conn.commit()
         cur.close()
@@ -131,6 +132,8 @@ def register():
             <input type="text" id="phone" name="phone" required>
             <label for="username">Usuário:</label>
             <input type="text" id="username" name="username" required>
+            <label for="email">Email:</label>  <!-- Adicionando o campo de email -->
+            <input type="email" id="email" name="email" required>
             <label for="password">Senha:</label>
             <input type="password" id="password" name="password" required>
             <button type="submit">Cadastrar</button>
@@ -164,63 +167,16 @@ def user_balance():
     user_id = session['user_id']
     conn = get_db_connection()
     cur = conn.cursor(dictionary=True)
-    cur.execute('SELECT balance, full_name, age, phone FROM users WHERE id = %s', (user_id,))
-    user_data = cur.fetchone()
+    cur.execute('SELECT balance FROM users WHERE id = %s', (user_id,))
+    user = cur.fetchone()
+    balance = user['balance']
     cur.close()
     conn.close()
 
-    if request.method == 'POST':
-        if 'withdraw' in request.form:
-            withdrawal_amount = float(request.form['withdrawal_amount'])
-            if withdrawal_amount <= user_data['balance']:
-                # Deduzir o valor do saldo
-                new_balance = user_data['balance'] - withdrawal_amount
-                conn = get_db_connection()
-                cur = conn.cursor()
-                cur.execute('UPDATE users SET balance = %s WHERE id = %s', (new_balance, user_id))
-                conn.commit()
-                cur.close()
-                conn.close()
-
-                # Processar o pagamento via Mercado Pago
-                payment_data = {
-                    "transaction_amount": withdrawal_amount,
-                    "description": "Saque",
-                    "payment_method_id": "pix",
-                    "payer": {
-                        "email": "payer_email@example.com"  # Substitua pelo email do pagador
-                    }
-                }
-                preference_data = {
-                    "items": [{
-                        "title": "Saque",
-                        "quantity": 1,
-                        "unit_price": withdrawal_amount
-                    }]
-                }
-                preference_response = sdk.preference().create(preference_data)
-                payment_url = preference_response["response"]["init_point"]
-
-                return redirect(payment_url)
-
-    return render_template_string('''<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saldo do Usuário</title>
-</head>
-<body>
-    <h1>Bem-vindo, {{ user_data['full_name'] }}!</h1>
-    <p>Seu saldo: R$ {{ user_data['balance'] }}</p>
-    <form method="post" action="/user/balance">
-        <label for="withdrawal_amount">Valor para saque:</label>
-        <input type="number" step="0.01" id="withdrawal_amount" name="withdrawal_amount" required>
-        <button type="submit" name="withdraw">Sacar</button>
-    </form>
+    return render_template_string(f'''
+    <h1>Seu saldo: R$ {balance:.2f}</h1>
     <a href="/logout">Sair</a>
-</body>
-</html>''', user_data=user_data)
+    ''')
 
 @app.route('/logout')
 def logout():
@@ -228,4 +184,5 @@ def logout():
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+    app.run(debug=True)
+
